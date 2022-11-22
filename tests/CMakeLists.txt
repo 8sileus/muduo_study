@@ -1,0 +1,29 @@
+add_executable(AsyncLogging_test AsyncLogging_test.cpp)
+target_link_libraries(AsyncLogging_test muduo_lib)
+
+add_executable(Channel_test Channel_test.cpp)
+target_link_libraries(Channel_test muduo_lib)
+
+add_executable(EventLoop_test EventLoop_test.cpp)
+target_link_libraries(EventLoop_test muduo_lib)
+
+add_executable(EventLoopThread_test EventLoopThread_test.cpp)
+target_link_libraries(EventLoopThread_test muduo_lib)
+
+add_executable(EventLoopThreadPool_test EventLoopThreadPool_test.cpp)
+target_link_libraries(EventLoopThreadPool_test muduo_lib)
+
+add_executable(LogFile_test LogFile_test.cpp)
+target_link_libraries(LogFile_test muduo_lib)
+
+add_executable(Logging_test Logging_test.cpp)
+target_link_libraries(Logging_test muduo_lib)
+
+add_executable(LogStream_test LogStream_test.cpp)
+target_link_libraries(LogStream_test muduo_lib)
+
+add_executable(Thread_test Thread_test.cpp)
+target_link_libraries(Thread_test muduo_lib)
+
+add_executable(ThreadPool_test ThreadPool_test.cpp)
+target_link_libraries(ThreadPool_test muduo_lib)
