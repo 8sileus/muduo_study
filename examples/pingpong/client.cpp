@@ -91,7 +91,6 @@ public:
             threadPool_.setThreadNum(threadCount);
         }
         threadPool_.start();
-        LOG_INFO << "1";
         for (int i = 0; i < blockSize; ++i) {
             message_.push_back(static_cast<char>(i % 128));
         }

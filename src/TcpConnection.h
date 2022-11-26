@@ -15,6 +15,7 @@
 #include "Noncopyable.h"
 #include "StringPiece.h"
 
+#include <any>
 #include <memory>
 
 struct tcp_info;
@@ -29,10 +30,15 @@ class TcpConnection : Noncopyable,
                       public std::enable_shared_from_this<TcpConnection> {
 
 private:
+    /// @brief 连接状态
     enum StateE {
+        /// @brief 断开连接状态
         kDisconnected,
+        /// @brief 正在连接状态
         kConnecting,
+        /// @brief 已连接状态
         kConnected,
+        /// @brief 正在关闭状态
         kDisconnecting
     };
 
