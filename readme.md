@@ -26,7 +26,7 @@ make
 	- std::thread -> Thread
 	- std::mutex -> Mutex
 	- std::atomic ->Automic
-	- std::Conditon -> Condition	
+	- std::condtion_variable -> Condition	
 	- std::promise -> CountDown
 3. 部分的函数使用了lambda代替bind
 4. 整合了部分文件。  
