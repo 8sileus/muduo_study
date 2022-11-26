@@ -1,8 +1,24 @@
+if(BOOSTTEST_LIBRARY)
+    add_executable(Buffer_test Buffer_test.cpp)
+    target_link_libraries(Buffer_test muduo_lib boost_unit_test_framework)
+    add_test(NAME Buffer_test COMMAND Buffer_test)
+
+    add_executable(InetAddress_test InetAddress_test.cpp)
+    target_link_libraries(InetAddress_test muduo_lib boost_unit_test_framework)
+    add_test(NAME InetAddress_test COMMAND InetAddress_test)
+endif()
+
 add_executable(AsyncLogging_test AsyncLogging_test.cpp)
 target_link_libraries(AsyncLogging_test muduo_lib)
 
 add_executable(Channel_test Channel_test.cpp)
 target_link_libraries(Channel_test muduo_lib)
+
+add_executable(EchoClient_test EchoClient_test.cpp)
+target_link_libraries(EchoClient_test muduo_lib)
+
+add_executable(EchoServer_test EchoServer_test.cpp)
+target_link_libraries(EchoServer_test muduo_lib)
 
 add_executable(EventLoop_test EventLoop_test.cpp)
 target_link_libraries(EventLoop_test muduo_lib)
@@ -27,3 +43,6 @@ target_link_libraries(Thread_test muduo_lib)
 
 add_executable(ThreadPool_test ThreadPool_test.cpp)
 target_link_libraries(ThreadPool_test muduo_lib)
+
+add_executable(TimerQueue_test TimerQueue_test.cpp)
+target_link_libraries(TimerQueue_test muduo_lib)

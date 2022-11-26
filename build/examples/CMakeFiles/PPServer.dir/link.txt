@@ -1,0 +1,1 @@
+/usr/bin/g++ CMakeFiles/PPServer.dir/pingpong/server.cpp.o -o /home/lhx/myproject/muduo_study/bin/PPServer  -Wl,-rpath,/home/lhx/myproject/muduo_study/lib /home/lhx/myproject/muduo_study/lib/libmuduo_lib.so -lpthread 

@@ -1,3 +1,11 @@
+// Copyright 2010, Shuo Chen.  All rights reserved.
+// http://code.google.com/p/muduo/
+//
+// Use of this source code is governed by a BSD-style license
+// that can be found in the License file.
+
+// Author: Shuo Chen (chenshuo at chenshuo dot com)
+
 #include "ThreadPool.h"
 
 #include <stdio.h>
@@ -24,7 +32,19 @@ void ThreadPool::start(int numThreads)
     for (int i = 0; i < numThreads; ++i) {
         char id[32];
         ::snprintf(id, sizeof(id), "%d", i + 1);
-        threads_.emplace_back(new Thread(std::bind(&ThreadPool::runInThread, this), name_ + id));
+        threads_.emplace_back(new Thread(
+            [&]() {
+                if (threadInitCallBack_) {
+                    threadInitCallBack_();
+                }
+                while (running_) {
+                    Task task(take());
+                    if (task) {
+                        task();
+                    }
+                }
+            },
+            name_ + id));
         threads_[i]->start();
     }
     if (numThreads == 0 && threadInitCallBack_) {
@@ -84,19 +104,6 @@ ThreadPool::Task ThreadPool::take()
         }
     }
     return task;
-}
-
-void ThreadPool::runInThread()
-{
-    if (threadInitCallBack_) {
-        threadInitCallBack_();
-    }
-    while (running_) {
-        Task task(take());
-        if (task) {
-            task();
-        }
-    }
 }
 
 } // namespace muduo

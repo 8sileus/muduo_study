@@ -1,3 +1,11 @@
+// Copyright 2010, Shuo Chen.  All rights reserved.
+// http://code.google.com/p/muduo/
+//
+// Use of this source code is governed by a BSD-style license
+// that can be found in the License file.
+
+// Author: Shuo Chen (chenshuo at chenshuo dot com)
+
 #ifndef __MUDUO_CHANNEL_H__
 #define __MUDUO_CHANNEL_H__
 
@@ -29,7 +37,7 @@ public:
     void setCloseCallback(EventCallback cb) { closeCallback_ = std::move(cb); }
     void setErrorCallback(EventCallback cb) { errorCallback_ = std::move(cb); }
 
-    void tie(const std::shared_ptr<void>&);
+    void tie(const std::shared_ptr<void>& obj);
     int fd() const { return fd_; }
     int events() const { return events_; }
     void set_revents(int revents) { revents_ = revents; }
@@ -93,8 +101,8 @@ private:
     int index_; // EPoll中作为状态，Poll中作为下标
     bool logHup_; //是否记录fd关闭信息
 
-    std::weak_ptr<void> tie_; //上层对象的弱指针
-    bool tied_; // channel是否被包养
+    std::weak_ptr<void> tie_; //观察当前channel的存在状态
+    bool tied_; // 是否被绑定过
     bool eventHandling_;
     bool addedToLoop_; //该Channel是否被加入loop
     ReadEventCallback readCallback_; //读回调函数

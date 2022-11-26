@@ -12,13 +12,13 @@ EventLoop* g_loop;
 
 void printTid()
 {
-    printf("pid = %d, tid = %d\n", getpid(), CurrentThread::tid());
-    printf("now %s\n", Timestamp::now().toString().c_str());
+    printf("pid = %d, tid = %d\n", getpid(), current_thread::tid());
+    printf("now %s\n", Timestamp::now().toFormattedString(false).c_str());
 }
 
 void print(const char* msg)
 {
-    printf("msg %s %s\n", Timestamp::now().toString().c_str(), msg);
+    printf("msg %s %s\n", Timestamp::now().toFormattedString(false).c_str(), msg);
     if (++cnt == 20) {
         g_loop->quit();
     }
@@ -27,7 +27,7 @@ void print(const char* msg)
 void cancel(TimerId timer)
 {
     g_loop->cancel(timer);
-    printf("cancelled at %s\n", Timestamp::now().toString().c_str());
+    printf("cancelled at %s\n", Timestamp::now().toFormattedString(false).c_str());
 }
 
 int main()

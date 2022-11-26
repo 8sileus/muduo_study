@@ -1,0 +1,1 @@
+/usr/bin/g++ CMakeFiles/LogFile_test.dir/LogFile_test.cpp.o -o /home/lhx/myproject/muduo_study/bin/LogFile_test  -Wl,-rpath,/home/lhx/myproject/muduo_study/lib /home/lhx/myproject/muduo_study/lib/libmuduo_lib.so -lpthread 

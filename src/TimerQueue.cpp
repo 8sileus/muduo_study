@@ -1,3 +1,11 @@
+// Copyright 2010, Shuo Chen.  All rights reserved.
+// http://code.google.com/p/muduo/
+//
+// Use of this source code is governed by a BSD-style license
+// that can be found in the License file.
+
+// Author: Shuo Chen (chenshuo at chenshuo dot com)
+
 #include "TimerQueue.h"
 #include "EventLoop.h"
 #include "Timer.h"
@@ -77,35 +85,52 @@ TimerQueue::~TimerQueue()
 TimerId TimerQueue::addTimer(TimerCallback cb, Timestamp when, double interval)
 {
     Timer* timer = new Timer(std::move(cb), when, interval);
-    loop_->runInLoop(std::bind(&TimerQueue::addTimerInLoop, this, timer));
+    loop_->runInLoop(
+        [this, timer]() {
+            bool earliestChanged = insert(timer);
+            if (earliestChanged) {
+                detail::ResetTimerfd(timerfd_, timer->expiration());
+            }
+        });
     return TimerId(timer, timer->sequence());
 }
 
 void TimerQueue::cancel(TimerId timerId)
 {
-    loop_->runInLoop(std::bind(&TimerQueue::cancelInLoop, this, timerId));
+    loop_->runInLoop(
+        [this, timerId]() {
+            ActiveTimer timer(timerId.timer_, timerId.sequence_);
+            ActiveTimerSet::iterator it = activeTimers_.find(timer);
+            if (it != activeTimers_.end()) {
+                timers_.erase(Entry(it->first->expiration(), it->first));
+                delete it->first;
+                activeTimers_.erase(it);
+            } else if (callingExpiredTimers_) {
+                cancelingTimers_.insert(timer);
+            }
+        });
 }
 
-void TimerQueue::addTimerInLoop(Timer* timer)
-{
-    bool earliestChanged = insert(timer);
-    if (earliestChanged) {
-        detail::ResetTimerfd(timerfd_, timer->expiration());
-    }
-}
+// void TimerQueue::addTimerInLoop(Timer* timer)
+// {
+//     bool earliestChanged = insert(timer);
+//     if (earliestChanged) {
+//         detail::ResetTimerfd(timerfd_, timer->expiration());
+//     }
+// }
 
-void TimerQueue::cancelInLoop(TimerId timerId)
-{
-    ActiveTimer timer(timerId.timer_, timerId.sequence_);
-    ActiveTimerSet::iterator it = activeTimers_.find(timer);
-    if (it != activeTimers_.end()) {
-        timers_.erase(Entry(it->first->expiration(), it->first));
-        delete it->first;
-        activeTimers_.erase(it);
-    } else if (callingExpiredTimers_) {
-        cancelingTimers_.insert(timer);
-    }
-}
+// void TimerQueue::cancelInLoop(TimerId timerId)
+// {
+//     ActiveTimer timer(timerId.timer_, timerId.sequence_);
+//     ActiveTimerSet::iterator it = activeTimers_.find(timer);
+//     if (it != activeTimers_.end()) {
+//         timers_.erase(Entry(it->first->expiration(), it->first));
+//         delete it->first;
+//         activeTimers_.erase(it);
+//     } else if (callingExpiredTimers_) {
+//         cancelingTimers_.insert(timer);
+//     }
+// }
 
 void TimerQueue::handleRead()
 {

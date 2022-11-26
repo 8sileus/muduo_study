@@ -1,3 +1,11 @@
+// Copyright 2010, Shuo Chen.  All rights reserved.
+// http://code.google.com/p/muduo/
+//
+// Use of this source code is governed by a BSD-style license
+// that can be found in the License file.
+
+// Author: Shuo Chen (chenshuo at chenshuo dot com)
+
 #include "Channel.h"
 #include "EventLoop.h"
 #include "log/Logging.h"
@@ -30,6 +38,7 @@ Channel::~Channel() = default;
 //防止channel被remove掉，channel还在执行回调
 void Channel::tie(const std::shared_ptr<void>& obj)
 {
+    LOG_TRACE << "Channel::tie";
     tie_ = obj;
     tied_ = true;
 }

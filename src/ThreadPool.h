@@ -1,3 +1,11 @@
+// Copyright 2010, Shuo Chen.  All rights reserved.
+// http://code.google.com/p/muduo/
+//
+// Use of this source code is governed by a BSD-style license
+// that can be found in the License file.
+
+// Author: Shuo Chen (chenshuo at chenshuo dot com)
+
 #ifndef __MUDUO_THREADPOOL_H__
 #define __MUDUO_THREADPOOL_H__
 
@@ -32,7 +40,6 @@ public:
 private:
     //使用isFull前 外部已经加锁
     bool isFull() const { return maxQueueSize_ > 0 && queue_.size() >= maxQueueSize_; }
-    void runInThread();
     Task take();
 
 private:

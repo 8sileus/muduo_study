@@ -1,6 +1,15 @@
+// Copyright 2010, Shuo Chen.  All rights reserved.
+// http://code.google.com/p/muduo/
+//
+// Use of this source code is governed by a BSD-style license
+// that can be found in the License file.
+
+// Author: Shuo Chen (chenshuo at chenshuo dot com)
+
 #include "EventLoopThreadPool.h"
 #include "EventLoop.h"
 #include "EventLoopThread.h"
+#include "log/Logging.h"
 
 namespace muduo {
 
@@ -19,6 +28,7 @@ EventLoopThreadPool::~EventLoopThreadPool()
 
 void EventLoopThreadPool::start(const ThreadInitCallback& cb)
 {
+    LOG_TRACE << "EventLoopThreadPool::start";
     started_ = true;
     for (int i = 0; i < numThreads_; ++i) {
         char buf[name_.size() + 32];

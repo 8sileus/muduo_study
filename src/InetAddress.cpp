@@ -1,10 +1,20 @@
+// Copyright 2010, Shuo Chen.  All rights reserved.
+// http://code.google.com/p/muduo/
+//
+// Use of this source code is governed by a BSD-style license
+// that can be found in the License file.
+
+// Author: Shuo Chen (chenshuo at chenshuo dot com)
+
 #include "InetAddress.h"
 #include "Endian.h"
 #include "SocketAPI.h"
 #include "log/Logging.h"
 
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
 
 static const in_addr_t kInaddrAny = INADDR_ANY;
 static const in_addr_t kInaddrLoopback = INADDR_LOOPBACK;

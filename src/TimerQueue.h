@@ -1,3 +1,11 @@
+// Copyright 2010, Shuo Chen.  All rights reserved.
+// http://code.google.com/p/muduo/
+//
+// Use of this source code is governed by a BSD-style license
+// that can be found in the License file.
+
+// Author: Shuo Chen (chenshuo at chenshuo dot com)
+
 #ifndef __MUDUO_TIMERQUEUE_H__
 #define __MUDUO_TIMERQUEUE_H__
 
@@ -31,8 +39,8 @@ private:
     using ActiveTimer = std::pair<Timer*, int64_t>;
     using ActiveTimerSet = std::set<ActiveTimer>;
 
-    void addTimerInLoop(Timer* timer);
-    void cancelInLoop(TimerId timerId);
+    // void addTimerInLoop(Timer* timer);
+    // void cancelInLoop(TimerId timerId);
     void handleRead();
     std::vector<Entry> getExpired(Timestamp now);
     void reset(const std::vector<Entry>& expired, Timestamp now);

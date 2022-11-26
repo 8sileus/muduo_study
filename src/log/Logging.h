@@ -1,3 +1,11 @@
+// Copyright 2010, Shuo Chen.  All rights reserved.
+// http://code.google.com/p/muduo/
+//
+// Use of this source code is governed by a BSD-style license
+// that can be found in the License file.
+
+// Author: Shuo Chen (chenshuo at chenshuo dot com)
+
 //  日志工作流程 :
 //  1.  调用宏产生匿名Logging对象.              |   LOG_*
 //  2.  Logging里的Impl类初始化. Tmpl构造函数.  |   << 日期,时间,线程id,等级,出错信息
