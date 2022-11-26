@@ -10,11 +10,13 @@
 为了学习网络编程。
 参考了《Linux高性能服务器编程》和《Linux多线程服务端编程》。 
 # 项目启动
+```
 sourceDir=$(pwd) &&\
 mkdir -p ${sourceDir}/build && \
 cd ${sourceDir}/build && \
 cmake .. && \
 make
+```
 # 一些修改 （负优化）
 - 为什么修改？  
 	- 练习STL库的使用。
