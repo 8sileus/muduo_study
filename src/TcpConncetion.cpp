@@ -18,14 +18,14 @@
 
 namespace muduo {
 
-void defaultConnectionCallback(const TcpConnectionPtr& conn)
+void defaultConnectionCallback(const TcpConnection::Ptr& conn)
 {
     LOG_TRACE << conn->localAddress().toIpPort() << " -> "
               << conn->peerAddress().toIpPort() << " is "
               << (conn->connected() ? "UP" : "DOWN");
 }
 
-void defaultMessageCallback(const TcpConnectionPtr&, Buffer* buf, Timestamp receiveTime)
+void defaultMessageCallback(const TcpConnection::Ptr&, Buffer* buf, Timestamp receiveTime)
 {
     buf->retrieveAll();
 }
@@ -46,19 +46,19 @@ TcpConnection::TcpConnection(
     , peerAddr_(peerAddr)
     , highWaterMark_(64 * 1024 * 1024)
 {
-    //注册回调函数
+    //注册回调
     channel_->setReadCallback(std::bind(&TcpConnection::handleRead, this, _1));
     channel_->setWriteCallback(std::bind(&TcpConnection::handleWrite, this));
     channel_->setCloseCallback(std::bind(&TcpConnection::handleClose, this));
     channel_->setErrorCallback(std::bind(&TcpConnection::handleError, this));
-    LOG_DEBUG << "TcpConnection::ctor[" << name_ << "] at " << this << " fd=" << sockfd;
+
+    LOG_DEBUG << "TcpConnection::ctor[" << name_ << "] at " << this << " fd=" << channel_->fd();
     socket_->setKeepAlive(true);
 }
 
 TcpConnection::~TcpConnection()
 {
-    LOG_DEBUG << "TcpConnection::dtor[" << name_ << "] at " << this
-              << " fd=" << channel_->fd()
+    LOG_DEBUG << "TcpConnection::dtor[" << name_ << "] at " << this << " fd=" << channel_->fd()
               << " state=" << stateToString();
 }
 
@@ -75,62 +75,54 @@ std::string TcpConnection::getTcpInfoString() const
     return buf;
 }
 
-void TcpConnection::send(const void* data, int len)
+void TcpConnection::send(const void* data, size_t size)
 {
-    send(StringPiece(static_cast<const char*>(data), len));
+    send(std::string_view(static_cast<const char*>(data), size));
 }
 
-void TcpConnection::send(const StringPiece& message)
+void TcpConnection::send(Buffer* buffer)
+{
+    send(std::string_view(buffer->retrieveAllAsString()));
+}
+
+void TcpConnection::send(const std::string_view& message)
 {
     if (state_ == kConnected) {
         if (loop_->isInLoopThread()) {
-            sendInLoop(message);
+            sendInLoop(message.data(), message.size());
         } else {
-            void (TcpConnection::*fp)(const StringPiece& message) = &TcpConnection::sendInLoop;
-            loop_->runInLoop(std::bind(fp, this, message.as_string()));
+            loop_->runInLoop(std::bind(&TcpConnection::sendInLoop, this, message.data(), message.size()));
         }
     }
 }
 
-void TcpConnection::send(Buffer* buf)
-{
-    if (state_ == kConnected) {
-        if (loop_->isInLoopThread()) {
-            sendInLoop(buf->peek(), buf->readableBytes());
-            buf->retrieveAll();
-        } else {
-            void (TcpConnection::*fp)(const StringPiece& message) = &TcpConnection::sendInLoop;
-            loop_->runInLoop(std::bind(fp, this, buf->retrieveAllAsString()));
-        }
-    }
-}
-
-void TcpConnection::sendInLoop(const StringPiece& message)
-{
-    sendInLoop(message.data(), message.size());
-}
-
+// 发送数据 应用写的快 而内核发送数据慢 需要把待发送数据写入缓冲区，而且设置了水位回调
 void TcpConnection::sendInLoop(const void* data, size_t len)
 {
     ssize_t nwrote = 0;
     size_t remaining = len;
     bool faultError = false;
 
+    // 如果之前已经被设置为shutdown 就不用再执行了
     if (state_ == kDisconnected) {
         LOG_WARN << "disconnected, give up writing";
         return;
     }
-
+    // IF1:之前已经注册了EPOLLOUT事件 意味着:现在写缓冲区已满
+    //      则把数据添加到outBuffer中
+    // IF2:之前没有注册EPOLLOUT事件 意味着：写缓冲区空闲
+    //      直接调用write即可
     if (!channel_->isWriting() && outputBuffer_.readableBytes() == 0) {
         nwrote = sockets::Write(channel_->fd(), data, len);
         if (nwrote >= 0) {
             remaining = len - nwrote;
             if (remaining == 0 && writeCompleteCallback_) {
+                // 发送完毕就给channel取消epollout事件
                 loop_->queueInLoop(std::bind(writeCompleteCallback_, shared_from_this()));
             }
         } else {
             nwrote = 0;
-            // EWOULDBLOCK 用于非阻塞模式，不需要重新读或者写
+            // EWOULDBLOCK = EAGAIN 用于非阻塞模式，表示没有数据的正常返回
             // EPIPE 连接已经关闭
             if (errno != EWOULDBLOCK) {
                 LOG_SYSERR << "TcpConnection::sendInLoop";
@@ -140,9 +132,17 @@ void TcpConnection::sendInLoop(const void* data, size_t len)
             }
         }
     }
-
+    // IF2中如果write没有把数据全部发送出去，则把剩余数据写入outBuffer_,
+    // 并给channel注册EPOLLOUT事件,当发送缓冲区有空余空间后会通知channel，
+    // 然后调用channel注册的writeCallback_函数，而channel的writeCallback_.
+    // 实际上就是TcpConnection设置的handleWrite
     if (!faultError && remaining > 0) {
         size_t oldLen = outputBuffer_.readableBytes();
+        // 如果旧数据长度<高水位线,同时加上这次的数据后>=高水位线。
+        // 这就表明之前没有向loop注册过highWaterMarkCallback_回调函数。
+        // 那么这次就向loop注册
+        // 反之，则意味着之前已经注册过highWaterMarkCallback_回调函数。
+        // 那么就不用再注册了，直接向outBuffer_添加数据即可。
         if (oldLen + remaining >= highWaterMark_
             && oldLen < highWaterMark_
             && highWaterMarkCallback_) {
@@ -165,6 +165,7 @@ void TcpConnection::shutdown()
 
 void TcpConnection::shutdownInLoop()
 {
+    //说明outBuffer_已经把数据发完了
     if (!channel_->isWriting()) {
         socket_->shutdownWrite();
     }
@@ -178,13 +179,13 @@ void TcpConnection::forceClose()
     }
 }
 
-void TcpConnection::forceCloseWithDelay(double seconds)
-{
-    if (state_ == kConnected || state_ == kDisconnecting) {
-        setState(kDisconnecting);
-        loop_->runAfter(seconds, std::bind(&TcpConnection::forceClose, shared_from_this()));
-    }
-}
+// void TcpConnection::forceCloseWithDelay(double seconds)
+// {
+//     if (state_ == kConnected || state_ == kDisconnecting) {
+//         setState(kDisconnecting);
+//         loop_->runAfter(seconds, std::bind(&TcpConnection::forceClose, shared_from_this()));
+//     }
+// }
 
 void TcpConnection::forceCloseInLoop()
 {
@@ -243,17 +244,23 @@ void TcpConnection::stopReadInLoop()
 void TcpConnection::connectEstablished()
 {
     LOG_TRACE << "connectEstablished";
+
     setState(kConnected);
     channel_->tie(shared_from_this());
     channel_->enableReading(); //向poller注册可读事件
-    connectionCallback_(shared_from_this()); //新连接已经建立
+
+    // 执行连接回调
+    connectionCallback_(shared_from_this());
 }
 
 void TcpConnection::connectDestroyed()
 {
+    LOG_TRACE << "connectDestroyed";
+
     if (state_ == kConnected) {
         setState(kDisconnected);
         channel_->disableAll();
+        // 执行连接回调
         connectionCallback_(shared_from_this());
     }
     channel_->remove();
@@ -263,11 +270,11 @@ void TcpConnection::handleRead(Timestamp receiveTime)
 {
     int savedErrno = 0;
     ssize_t n = inputBuffer_.readFd(channel_->fd(), &savedErrno);
-    if (n > 0) {
+    if (n > 0) { //有数据到来则执行messageCallback回调
         messageCallback_(shared_from_this(), &inputBuffer_, receiveTime);
-    } else if (n == 0) {
+    } else if (n == 0) { //客户端已经断开
         handleClose();
-    } else {
+    } else { //出错
         errno = savedErrno;
         LOG_SYSERR << "TcpConnection::handleRead";
         handleError();
@@ -293,25 +300,25 @@ void TcpConnection::handleWrite()
             LOG_SYSERR << "TcpConnection::handleWrite";
         }
     } else {
-        LOG_TRACE << "Connection fd = " << channel_->fd()
-                  << " is down, no more writing";
+        LOG_TRACE << "Connection fd = " << channel_->fd() << " is down, no more writing";
     }
 }
 
 void TcpConnection::handleClose()
 {
     LOG_TRACE << "fd = " << channel_->fd() << " state = " << stateToString();
+
     setState(kDisconnected);
     channel_->disableAll();
-    TcpConnectionPtr guardThis(shared_from_this());
-    connectionCallback_(guardThis);
-    closeCallback_(guardThis);
+    TcpConnection::Ptr ptr(shared_from_this());
+    connectionCallback_(ptr);
+    closeCallback_(ptr);
 }
+
 void TcpConnection::handleError()
 {
     int err = sockets::GetSocketError(channel_->fd());
-    LOG_ERROR << "TcpConnection::handleError [" << name_
-              << "] - SO_ERROR = " << err << " " << strerror_tl(err);
+    LOG_ERROR << "TcpConnection::handleError [" << name_ << "] - SO_ERROR = " << err << " " << strerror_tl(err);
 }
 
 } // namespace muduo

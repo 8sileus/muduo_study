@@ -13,10 +13,11 @@
 #include "Callbacks.h"
 #include "InetAddress.h"
 #include "Noncopyable.h"
-#include "StringPiece.h"
 
 #include <any>
+#include <atomic>
 #include <memory>
+#include <string_view>
 
 struct tcp_info;
 
@@ -45,8 +46,11 @@ private:
 public:
     using Ptr = std::shared_ptr<TcpConnection>;
 
-    TcpConnection(EventLoop* loop, const std::string& name, int sockfd,
-        const InetAddress& localAddr, const InetAddress& peerAddr);
+    TcpConnection(EventLoop* loop,
+        const std::string& name,
+        int sockfd,
+        const InetAddress& localAddr,
+        const InetAddress& peerAddr);
     ~TcpConnection();
 
     EventLoop* getLoop() const { return loop_; }
@@ -54,31 +58,37 @@ public:
     const InetAddress& localAddress() const { return localAddr_; }
     const InetAddress& peerAddress() const { return peerAddr_; }
     bool connected() const { return state_ == kConnected; }
-    bool disconnected() const { return state_ == kDisconnected; }
+    // bool disconnected() const { return state_ == kDisconnected; }
     bool isReading() const { return reading_; };
+
+    void setContext(const std::any& context) { context_ = context; }
+    const std::any& getContext() const { return context_; }
+    // std::any* getMutableContext() { return &context_; }
 
     /// @brief 获取tcp详细信息 如果正确返回true
     bool getTcpInfo(struct tcp_info*) const;
     std::string getTcpInfoString() const;
-    /// @brief 发送数据
-    // void send(std::string&& msg);
-    void send(const void* message, int len);
-    void send(const StringPiece& message);
-    void send(Buffer* Message);
+
+    // 发送数据
+    void send(const void* data, size_t size);
+    void send(const std::string_view& message);
+    void send(Buffer* buffer);
+
     /// @brief 关闭连接
     void shutdown();
-    /// @brief 建立连接
+    /// @brief 连接建立
     void connectEstablished();
-    /// @brief 销毁连接
+    /// @brief 连接销毁
     void connectDestroyed();
 
     void forceClose();
-    void forceCloseWithDelay(double seconds);
+    // void forceCloseWithDelay(double seconds);
     void setTcpNoDelay(bool on);
 
     void startRead();
     void stopRead();
 
+    //  设置回调函数
     void setConnectionCallback(const ConnectionCallback& cb) { connectionCallback_ = cb; }
     void setMessageCallback(const MessageCallback& cb) { messageCallback_ = cb; }
     void setWriteCompleteCallback(const WriteCompleteCallback& cb) { writeCompleteCallback_ = cb; }
@@ -94,9 +104,9 @@ private:
     void handleWrite();
     void handleClose();
     void handleError();
-    void sendInLoop(std::string&& message);
-    void sendInLoop(const StringPiece& message);
-    void sendInLoop(const void* message, size_t len);
+
+    void sendInLoop(const void* data, size_t len);
+
     void shutdownInLoop();
     void forceCloseInLoop();
     void setState(StateE s) { state_ = s; }
@@ -108,7 +118,7 @@ private:
     /// @brief 所属的subloop
     EventLoop* loop_;
     const std::string name_;
-    StateE state_;
+    std::atomic<StateE> state_;
     bool reading_;
     std::unique_ptr<Socket> socket_;
     std::unique_ptr<Channel> channel_;
@@ -128,6 +138,8 @@ private:
     Buffer inputBuffer_;
     /// @brief 发送数据缓冲区
     Buffer outputBuffer_;
+
+    std::any context_;
 };
 
 } // namespace muduo

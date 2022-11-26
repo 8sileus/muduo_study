@@ -32,6 +32,7 @@ private:
     EventLoop* loop_;
     Socket acceptSocket_;
     Channel acceptChannel_;
+    // TcpConection注册的回调函数
     NewConnectionCallback newConnectionCallback_;
     bool listening_;
     //提前占用一个文件描述符 用于在文件描述符到达上限后优雅的断开连接

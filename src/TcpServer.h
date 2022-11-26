@@ -15,13 +15,18 @@ class EventLoopThreadPool;
 
 class TcpServer : Noncopyable {
 public:
-    using ThreadInitCallback = std::function<void(EventLoop*)>;
     enum Option {
         kNoReusePort,
         kReusePort,
     };
 
-    TcpServer(EventLoop* loop, const InetAddress& listenAddr, const std::string& name, Option option = kNoReusePort);
+public:
+    using ThreadInitCallback = std::function<void(EventLoop*)>;
+
+    TcpServer(EventLoop* loop,
+        const InetAddress& listenAddr,
+        const std::string& name,
+        Option option = kNoReusePort);
     ~TcpServer();
 
     //开启监听
@@ -30,15 +35,14 @@ public:
     const std::string& ipPort() const { return ipPort_; }
     const std::string& name() const { return name_; }
     EventLoop* getLoop() const { return loop_; }
+    void setThreadNum(int numThreads) { threadPool_->setThreadNum(numThreads); }
     std::shared_ptr<EventLoopThreadPool> threadpool() { return threadPool_; }
 
-    //设置 subloop的个数
-    void setThreadNum(int numThreads) { threadPool_->setThreadNum(numThreads); }
     //设置回调函数
+    void setThreadInitCallback(const ThreadInitCallback& cb) { threadInitCallback_ = cb; }
     void setConnectionCallback(const ConnectionCallback& cb) { connectionCallback_ = cb; }
     void setMessageCallback(const MessageCallback& cb) { messageCallback_ = cb; }
     void setWriteCompleteCallback(const WriteCompleteCallback& cb) { writeCompleteCallback_ = cb; }
-    void setThreadInitCallback(const ThreadInitCallback& cb) { threadInitCallback_ = cb; }
 
 private:
     void newConnection(int sockfd, const InetAddress& peerAddr);
@@ -54,6 +58,7 @@ private:
     std::unique_ptr<Acceptor> acceptor_;
     std::shared_ptr<EventLoopThreadPool> threadPool_;
     std::atomic<int32_t> started_;
+    // nextConnId_只在main loop中执行所以不需要设为原子
     int nextConnId_;
     ConnectionMap connections_;
 
