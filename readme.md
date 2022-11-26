@@ -1,5 +1,6 @@
 # muduo_study  
-用C++实现的高质量的事件驱动型的网络库, 原作者：chenshuo  
+用C++实现的高质量的事件驱动型的网络库, 原作者：chenshuo。  
+项目为了学习网络编程而写，不要对性能有理想。  
 # 环境要求
 - C++14
 - Linux
@@ -14,16 +15,35 @@ cd ${sourceDir}/build && \
 cmake .. && \
 make
 # 一些修改 （负优化）
+- 为什么修改？  
+	- 练习STL库的使用。
+	- 把一些具体的实现忽略，方便自己理解muduo网络库。  
+	- 
 1. 去除boost依赖 //tests文件还依赖boost  
-2. 使用了std标准库 替换了一些 muduo自己的实现  
+2. 使用了std标准库替换了一些 muduo自己的实现  
 	- std::thread -> Thread
 	- std::mutex -> Mutex
 	- std::atomic ->Automic
 	- std::Conditon -> Condition	
 	- std::promise -> CountDown
-3. 
+3. 一些简短的函数使用了lambda代替bind
+4. 整合了部分文件。
+5. 对类外函数名，首字母大写
+# 性能测试
+- 缓冲大小:4k
+- 测试时间:30s  
+- 处理器:AMD R5 3600  
+- 内存:2g  
+- 处理器:2x2  
+- 测试文件: bin/PPClient bin/PPServer
+
+- 单线程下 :
+	- 连接数		1	2	3	4  
+	- muduo_study  	  77	  766	  874	  610  
+	- muduo 		  69	  585	  693	  484  
 	
-性能上,比起原版muduo损失约20%的性能
+
+- 结论：性能上,比起原版muduo损失约20%的性能 玩具
 	
 
 
