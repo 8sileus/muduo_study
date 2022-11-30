@@ -39,8 +39,8 @@ private:
     using ActiveTimer = std::pair<Timer*, int64_t>;
     using ActiveTimerSet = std::set<ActiveTimer>;
 
-    // void addTimerInLoop(Timer* timer);
-    // void cancelInLoop(TimerId timerId);
+    void addTimerInLoop(Timer* timer);
+    void cancelInLoop(TimerId timerId);
     void handleRead();
     std::vector<Entry> getExpired(Timestamp now);
     void reset(const std::vector<Entry>& expired, Timestamp now);

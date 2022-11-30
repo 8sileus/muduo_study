@@ -63,7 +63,7 @@ public:
 
     void setContext(const std::any& context) { context_ = context; }
     const std::any& getContext() const { return context_; }
-    // std::any* getMutableContext() { return &context_; }
+    std::any* getMutableContext() { return &context_; }
 
     /// @brief 获取tcp详细信息 如果正确返回true
     bool getTcpInfo(struct tcp_info*) const;

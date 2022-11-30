@@ -14,8 +14,6 @@
 
 namespace muduo {
 
-const int AsyncLogging::s_numBufferMaxSize = 16;
-
 AsyncLogging::AsyncLogging(
     const std::string& basename,
     off_t rollSize,
@@ -29,14 +27,12 @@ AsyncLogging::AsyncLogging(
     , mutex_()
     , cond_()
     , currentBuffer_(new Buffer)
-    , fullBuffers_()
-    , emptyBuffers_()
-    , numBuffer_(5)
+    , nextBuffer_(new Buffer)
+    , buffers_()
 {
     currentBuffer_->bzero();
-    for (int i = 0; i < 4; ++i) {
-        emptyBuffers_.emplace_back(new Buffer);
-    }
+    nextBuffer_->bzero();
+    buffers_.reserve(16);
 }
 
 AsyncLogging::~AsyncLogging()
@@ -52,13 +48,11 @@ void AsyncLogging::append(const char* logline, int len)
     if (currentBuffer_->avail() > len) {
         currentBuffer_->append(logline, len);
     } else {
-        fullBuffers_.push_back(std::move(currentBuffer_));
-        if (!emptyBuffers_.empty()) {
-            currentBuffer_ = std::move(emptyBuffers_.front());
-            emptyBuffers_.pop_front();
+        buffers_.push_back(std::move(currentBuffer_));
+        if (nextBuffer_) {
+            currentBuffer_ = std::move(nextBuffer_);
         } else {
             currentBuffer_.reset(new Buffer);
-            ++numBuffer_;
         }
         currentBuffer_->append(logline, len);
         cond_.notify_one();
@@ -83,36 +77,58 @@ void AsyncLogging::threadFunc()
 {
     promise_.set_value();
     LogFile output(basename_, rollSize_, false);
+    BufferPtr newBuffer1(new Buffer);
+    BufferPtr newBuffer2(new Buffer);
+    newBuffer1->bzero();
+    newBuffer2->bzero();
+    BufferVector buffersToWrite;
+    buffersToWrite.reserve(16);
     while (running_) {
         {
             std::unique_lock<std::mutex> lock(mutex_);
-            if (fullBuffers_.empty()) {
+            if (buffers_.empty()) {
                 cond_.wait_for(lock, std::chrono::seconds(flushInterval_));
             }
-            fullBuffers_.push_back(std::move(currentBuffer_));
-            if (emptyBuffers_.empty()) {
-                currentBuffer_.reset(new Buffer);
-                ++numBuffer_;
-            } else {
-                currentBuffer_ = std::move(emptyBuffers_.front());
-                emptyBuffers_.pop_front();
+            buffers_.push_back(std::move(currentBuffer_));
+            currentBuffer_ = std::move(newBuffer1);
+            buffersToWrite.swap(buffers_);
+            if (nextBuffer_ == nullptr) {
+                nextBuffer_ = std::move(newBuffer2);
             }
         }
         //过多buffer需要写，则只保留两个buffer，其余的都丢弃
-        if (numBuffer_ > 25) {
+        if (buffersToWrite.size() > 25) {
             char buf[256];
             ::snprintf(buf, sizeof(buf), "Dropped log messages at %s, %zd larger buffers\n",
-                Timestamp::now().toFormattedString(false).c_str(), fullBuffers_.size() - 2);
+                Timestamp::now().toFormattedString(false).c_str(),
+                buffersToWrite.size() - 2);
             fputs(buf, stderr);
             output.append(buf, static_cast<int>(strlen(buf)));
-            fullBuffers_.resize(2);
-            numBuffer_ = 2;
+            buffersToWrite.erase(buffersToWrite.begin() + 2, buffersToWrite.end());
         }
 
-        for (const auto& buffer : fullBuffers_) {
+        for (const auto& buffer : buffersToWrite) {
             output.append(buffer->data(), buffer->length());
         }
-        emptyBuffers_.splice(emptyBuffers_.end(), fullBuffers_);
+
+        if (buffersToWrite.size() > 2) {
+            // 删除多余的buffer
+            buffersToWrite.resize(2);
+        }
+
+        if (newBuffer1 == nullptr) {
+            newBuffer1 = std::move(buffersToWrite.back());
+            buffersToWrite.pop_back();
+            newBuffer1->reset();
+        }
+
+        if (newBuffer2 == nullptr) {
+            newBuffer2 = std::move(buffersToWrite.back());
+            buffersToWrite.pop_back();
+            newBuffer2->reset();
+        }
+
+        buffersToWrite.clear();
         output.flush();
     }
     output.flush();

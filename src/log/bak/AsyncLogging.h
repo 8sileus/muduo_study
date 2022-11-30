@@ -15,9 +15,9 @@
 #include <atomic>
 #include <condition_variable>
 #include <future>
-#include <list>
 #include <memory>
 #include <mutex>
+#include <vector>
 
 namespace muduo {
 class AsyncLogging : Noncopyable {
@@ -35,9 +35,7 @@ private:
 private:
     using Buffer = detail::FixedBuffer<detail::kLargeBuffer>;
     using BufferPtr = std::unique_ptr<Buffer>;
-    using BufferList = std::list<BufferPtr>;
-
-    static const int s_numBufferMaxSize;
+    using BufferVector = std::vector<BufferPtr>;
 
     const int flushInterval_;
     std::atomic<bool> running_;
@@ -48,9 +46,8 @@ private:
     std::mutex mutex_;
     std::condition_variable cond_;
     BufferPtr currentBuffer_;
-    BufferList emptyBuffers_;
-    BufferList fullBuffers_;
-    int numBuffer_;
+    BufferPtr nextBuffer_;
+    BufferVector buffers_;
 };
 
 } // namespace muduo

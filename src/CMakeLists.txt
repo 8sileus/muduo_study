@@ -29,6 +29,7 @@
 aux_source_directory(. sources)
 aux_source_directory(log sources)
 aux_source_directory(poller sources)
+aux_source_directory(http sources)
 
 add_library(muduo_lib ${sources})
 target_link_libraries(muduo_lib pthread)

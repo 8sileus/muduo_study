@@ -29,6 +29,9 @@ target_link_libraries(EventLoopThread_test muduo_lib)
 add_executable(EventLoopThreadPool_test EventLoopThreadPool_test.cpp)
 target_link_libraries(EventLoopThreadPool_test muduo_lib)
 
+add_executable(HttpServer_test HttpServer_test.cpp)
+target_link_libraries(HttpServer_test muduo_lib)
+
 add_executable(LogFile_test LogFile_test.cpp)
 target_link_libraries(LogFile_test muduo_lib)
 
