@@ -2,7 +2,7 @@
 
 原作者：@chenshuo。  
 用 C++17实现的基于事件驱动型的高性能网络库。
-为学习网络编程而写，参考《Linux 多线程服务端编程》。
+为学习网络编程而写，参考《Linux 多线程服务端编程》。  
 
 # 环境要求
 
@@ -27,21 +27,29 @@ make
 
 # 一些修改
 
-1. 去除 boost 依赖(部分测试文件还需要 boost)
-2. 使用STL代替muduo原有的实现
-   - Thread只简单封装了std::thread
+此修改并非为优化程序，只使为了用更好理解重写。
+
+1. 去除 boost 依赖(部分测试文件还需要 boost)。
+2. 为了更方便理解代码删除了assert(防御性编程很重要,这里只是为了学习,删除不必要的代码,使得代码更清晰)
+3. 类外函数首字母统一大写。
+4. 使用STL代替muduo原有的实现
    - std::mutex -> Mutex
    - std::atomic ->Atomic
    - std::condtion_variable -> Condition
    - std::promise -> CountDown
    - std::string_view -> StringPiece
    - std::any -> boost::any
- 3. 异步日志改用环形链表实现。
- 4. 日志添加颜色。
- 4. 类外函数首字母全大写。
- 5. 参考sylar的timer重写timer
- 6. 改变部分回调函数形参使之更方便理解。
-
+5. 线程模块
+   - 使用std::thread配合lambda完成。
+6. 日志模块
+   - 异步日志采用环形链表实现。
+   - 增加日志颜色。
+7. Timer模块
+   - 参考sylar的timer重写，更方便理解。
+8. TcpConnection
+   - 改变了newConnection的函数形参，更直观。  
+     原：std::function<void(int sockfd, const InetAddress& peerAddr)>;
+     现: std::function<void(std::unique_ptr<Socket> socket,InetAddress&& localAddr, InetAddress&& peerAddr)>
 
 # 性能测试
 
@@ -94,3 +102,4 @@ make
   - PingPong测试  
     客户端服务器都4线程1000连接  
     吞吐量 1019.75390625 MiB/s  
+  - 对比muduo原版性能损失约2%~4%
