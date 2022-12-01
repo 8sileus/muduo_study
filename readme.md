@@ -101,7 +101,7 @@ make
     
 - PingPong测试  
     客户端服务器都4线程
-    缓冲:4096
-    sessions:1000    
-    吞吐量 1019.75390625 MiB/s  
+    block:4096Bytes  
+    session:1000    
+    吞吐量 1019.75390625 MiB/s   
 - 对比muduo原版性能损失约2%~4%
