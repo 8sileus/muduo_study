@@ -8,7 +8,7 @@
 
 #include "EventLoop.h"
 #include "SocketAPI.h"
-#include "TimerQueue.h"
+#include "Timer.h"
 #include "log/Logging.h"
 #include "poller/Poller.h"
 
@@ -146,24 +146,24 @@ size_t EventLoop::queueSize() const
     return pendingFunctors_.size();
 }
 
-TimerId EventLoop::runAt(Timestamp time, TimerCallback cb)
+std::weak_ptr<Timer> EventLoop::runAt(Timestamp time, TimerCallback cb)
 {
     return timerQueue_->addTimer(std::move(cb), time, 0.0);
 }
 
-TimerId EventLoop::runAfter(double delay, TimerCallback cb)
+std::weak_ptr<Timer> EventLoop::runAfter(double delay, TimerCallback cb)
 {
     Timestamp time(addTime(Timestamp::now(), delay));
     return runAt(time, std::move(cb));
 }
 
-TimerId EventLoop::runEvery(double interval, TimerCallback cb)
+std::weak_ptr<Timer> EventLoop::runEvery(double interval, TimerCallback cb)
 {
     Timestamp time(addTime(Timestamp::now(), interval));
     return timerQueue_->addTimer(std::move(cb), time, interval);
 }
 
-void EventLoop::cancel(TimerId timerId)
+void EventLoop::cancel(std::weak_ptr<Timer> timerId)
 {
     timerQueue_->cancel(timerId);
 }

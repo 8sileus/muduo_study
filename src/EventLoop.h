@@ -17,12 +17,12 @@
 #include "Callbacks.h"
 #include "CurrentThread.h"
 #include "Noncopyable.h"
-#include "Timer.h"
 #include "Timestamp.h"
 
 namespace muduo {
 class Channel;
 class Poller;
+class Timer;
 class TimerQueue;
 
 class EventLoop : Noncopyable {
@@ -47,13 +47,13 @@ public:
     size_t queueSize() const;
 
     /// @brief 绝对时间触发timer
-    TimerId runAt(Timestamp time, TimerCallback cb);
+    std::weak_ptr<Timer> runAt(Timestamp time, TimerCallback cb);
     /// @brief 相对时间触发timer
-    TimerId runAfter(double delay, TimerCallback cb);
+    std::weak_ptr<Timer> runAfter(double delay, TimerCallback cb);
     /// @brief 重复触发timer
-    TimerId runEvery(double interval, TimerCallback cb);
+    std::weak_ptr<Timer> runEvery(double interval, TimerCallback cb);
     /// @brief 删除指定timer
-    void cancel(TimerId timerId);
+    void cancel(std::weak_ptr<Timer> timerId);
 
     //唤醒loop所在线程
     void wakeup();

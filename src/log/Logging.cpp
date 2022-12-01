@@ -14,11 +14,22 @@
 #include <stdio.h>
 #include <string.h>
 
+//颜色宏定义
+
 namespace muduo {
 
 thread_local char t_errnobuf[512];
 thread_local char t_time[64];
-thread_local time_t t_lastSecond;
+thread_local time_t t_lastSecond = 0;
+
+const char* Logger::Impl::s_colors[NUM_LOG_LEVELS] = {
+    GREEN, // DEBUG 绿色
+    BLUE, // DEBUG 蓝色
+    WHITE, // INFO 白色
+    YELLOW, // WARN 黄色
+    RED, // WARN 红色
+    LIGHT_GRAY, // FATAL 灰色
+};
 
 const char* strerror_tl(int saveErrno)
 {
@@ -95,6 +106,7 @@ Logger::Impl::Impl(LogLevel level, int saveErrno, const SourceFile& file, int li
     formatTime();
     current_thread::tid();
     stream_ << T(current_thread::tidString(), current_thread::tidStringLength());
+    stream_ << s_colors[level];
     stream_ << T(LogLevelName[level], 6);
     if (saveErrno != 0) {
         stream_ << strerror_tl(saveErrno) << " (errno=" << saveErrno << ")";
@@ -110,7 +122,7 @@ void Logger::Impl::formatTime()
         t_lastSecond = seconds;
         struct tm tm_time;
         ::localtime_r(&seconds, &tm_time);
-        ::snprintf(t_time, sizeof(t_time), "%4d%02d%02d %02d:%02d:%02d",
+        ::snprintf(t_time, sizeof(t_time), "[%4d%02d%02d %02d:%02d:%02d",
             tm_time.tm_year + 1900,
             tm_time.tm_mon + 1,
             tm_time.tm_mday,
@@ -118,13 +130,13 @@ void Logger::Impl::formatTime()
             tm_time.tm_min,
             tm_time.tm_sec);
     }
-    Fmt us(".%06d ", microseconds);
-    stream_ << T(t_time, 17) << T(us.data(), 8);
+    Fmt us(" +%06d] ", microseconds);
+    stream_ << T(t_time, 18) << T(us.data(), 10);
 }
 
 void Logger::Impl::finish()
 {
-    stream_ << " - " << basename_ << ':' << line_ << '\n';
+    stream_ << NONE << " - " << basename_ << ':' << line_ << '\n';
 }
 
 Logger::Logger(SourceFile file, int line)
