@@ -98,10 +98,5 @@ make
       98%    228  
       99%    242  
     100%    465 (longest request)  
-    
-- PingPong测试  
-    客户端服务器都4线程  
-    block:4096Bytes  
-    session:1000    
-    吞吐量 1019.75390625 MiB/s   
+   
 - 对比muduo原版性能损失约2%~4%
