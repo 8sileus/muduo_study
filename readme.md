@@ -27,7 +27,8 @@ make
 
 # 一些修改
 
-此修改并非为优化程序，只使为了用更好理解重写。
+并非所有修改都为了优化程序。
+部分修改使为了更好理解程序。
 
 1. 去除 boost 依赖(部分测试文件还需要 boost)。
 2. 为了更方便理解代码删除了assert(防御性编程很重要,这里只是为了学习,删除不必要的代码,使得代码更清晰)
@@ -45,7 +46,7 @@ make
    - 异步日志采用环形链表实现。
    - 增加日志颜色。
 7. Timer模块
-   - 参考sylar的timer重写，更方便理解。
+   - 参考sylar的timer进行重写，更方便理解。
 8. TcpConnection
    - 改变了newConnection的函数形参，更直观。  
      原：std::function<void(int sockfd, const InetAddress& peerAddr)>;
