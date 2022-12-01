@@ -1,7 +1,7 @@
 # muduo_study
 
 原作者：@chenshuo。  
-用 C++17实现的基于事件驱动型的高性能网络库。
+用 C++17实现的基于事件驱动型的高性能网络库。  
 为学习网络编程而写，参考《Linux 多线程服务端编程》。  
 
 # 环境要求
@@ -46,7 +46,7 @@ make
    - 增加日志颜色。
 7. Timer模块
    - 参考sylar的timer进行重写，更方便理解。
-8. TcpConnection
+8. Acceptor模块  
    - 改变了newConnection的函数形参，更直观。  
      原：std::function<void(int sockfd, const InetAddress& peerAddr)>;
      现: std::function<void(std::unique_ptr<Socket> socket,InetAddress&& localAddr, InetAddress&& peerAddr)>
