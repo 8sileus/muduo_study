@@ -14,15 +14,14 @@
 
 ```
 ./build.sh
-
+```
 or
-
+```
 sourceDir=$(pwd) &&\
 mkdir -p ${sourceDir}/build && \
 cd ${sourceDir}/build && \
 cmake .. && \
 make
-
 ```
 
 # 一些修改
@@ -41,7 +40,7 @@ make
    - std::string_view -> StringPiece
    - std::any -> boost::any
 5. 线程模块
-   - 使用std::thread配合lambda完成。
+   - 使用std::thread配合lambda实现。
 6. 日志模块
    - 异步日志采用环形链表实现。
    - 增加日志颜色。
