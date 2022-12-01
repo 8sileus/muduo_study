@@ -36,6 +36,12 @@ make
    - std::promise -> CountDown
    - std::string_view -> StringPiece
    - std::any -> boost::any
+ 3. 异步日志改用环形链表。
+ 4. 类外函数首字母全大写。
+ 4. 对一些函数进行了修改。  
+  - 原: using NewConnectionCallback = std::function<void(int sockfd, const InetAddress&)>;  
+    改：using NewConnectionCallback = std::function<void(std::unique_ptr<Socket>,InetAddress&&, InetAddress&&)>;  
+
 
 # 性能测试
 
@@ -44,6 +50,13 @@ make
   - 处理器个数:2x2
   - 内存:8g
   - 线程数量:4
+
+- 日志模块测试
+  - nop: 0.195400 seconds, 109888890 bytes, 5117707.27 msg/s, 536.33 MiB/s  
+  - /dev/null: 0.215226 seconds, 109888890 bytes, 4646278.80 msg/s, 486.92 MiB/s  
+  - /tmp/log: 0.252342 seconds, 109888890 bytes, 3962875.78 msg/s, 415.30 MiB/s  
+  - test_log_st: 0.275826 seconds, 109888890 bytes, 3625474.03 msg/s, 379.94 MiB/s  
+  - test_log_mt: 0.299726 seconds, 109888890 bytes, 3336380.56 msg/s, 349.65 MiB/s  
 
 - ab压力测试
   - 命令：./ab -n 1000000 -c 1000 -k  http://192.168.15.3:8000/hello

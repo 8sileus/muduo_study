@@ -10,7 +10,11 @@
 #define __MUDUO_LOGSTREAM_H__
 
 #include "Noncopyable.h"
-#include "StringPiece.h"
+
+#include<string.h>
+
+#include<string>
+#include<string_view>
 
 namespace muduo {
 namespace detail {
@@ -53,7 +57,7 @@ namespace detail {
         void setCookie(void (*cookie)()) { cookie_ = cookie; }
         // for used by unit test
         std::string toString() const { return std::string(data_, length()); }
-        StringPiece toStringPiece() const { return StringPiece(data_, length()); }
+        std::string_view toStringPiece() const { return std::string_view(data_, length()); }
 
     private:
         const char* end() const { return data_ + sizeof(data_); }
@@ -117,7 +121,7 @@ public:
         return *this;
     }
 
-    self& operator<<(const StringPiece& v)
+    self& operator<<(const std::string_view& v)
     {
         buffer_.append(v.data(), v.size());
         return *this;

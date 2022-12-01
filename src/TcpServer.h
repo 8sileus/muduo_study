@@ -45,12 +45,12 @@ public:
     void setWriteCompleteCallback(const WriteCompleteCallback& cb) { writeCompleteCallback_ = cb; }
 
 private:
-    void newConnection(int sockfd, const InetAddress& peerAddr);
+    void newConnection(std::unique_ptr<Socket>socket,InetAddress&& localAddr, InetAddress&& peerAddr);
     void removeConnection(const TcpConnectionPtr& conn);
     void removeConnectionInLoop(const TcpConnectionPtr& conn);
 
 private:
-    using ConnectionMap = std::map<std::string, TcpConnectionPtr>;
+    using ConnectionMap = std::map<std::string, TcpConnection::Ptr>;
 
     EventLoop* loop_;
     const std::string ipPort_;

@@ -9,6 +9,7 @@
 #include "log/LogStream.h"
 
 #include <inttypes.h>
+#include <stdio.h>
 
 #include <algorithm>
 

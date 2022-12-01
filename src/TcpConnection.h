@@ -48,7 +48,7 @@ public:
 
     TcpConnection(EventLoop* loop,
         const std::string& name,
-        int sockfd,
+        std::unique_ptr<Socket>socket,
         const InetAddress& localAddr,
         const InetAddress& peerAddr);
     ~TcpConnection();

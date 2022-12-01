@@ -3,6 +3,7 @@
 #include "EventLoop.h"
 #include "InetAddress.h"
 #include "Thread.h"
+#include "log/AsyncLogging.h"
 #include "log/Logging.h"
 
 #include <utility>
@@ -11,6 +12,13 @@
 #include <unistd.h>
 
 using namespace muduo;
+
+muduo::AsyncLogging* g_asyncLog = nullptr;
+
+void asyncOutput(const char* msg, int len)
+{
+    g_asyncLog->append(msg, len);
+}
 
 void onConnection(const TcpConnectionPtr& conn)
 {
@@ -30,7 +38,12 @@ int main(int argc, char* argv[])
         fprintf(stderr, "Usage: server <address> <port> <threads>\n");
     } else {
         LOG_INFO << "pid = " << getpid() << ", tid = " << current_thread::tid();
-        Logger::setLogLevel(Logger::WARN);
+        Logger::setLogLevel(Logger::INFO);
+
+        muduo::AsyncLogging log(::basename("PPtest"), 500 * 1000 * 1000);
+        log.start();
+        g_asyncLog = &log;
+        muduo::Logger::setOutputFunc(asyncOutput);
 
         const char* ip = argv[1];
         uint16_t port = static_cast<uint16_t>(atoi(argv[2]));

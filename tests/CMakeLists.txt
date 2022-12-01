@@ -14,9 +14,6 @@ target_link_libraries(AsyncLogging_test muduo_lib)
 add_executable(Channel_test Channel_test.cpp)
 target_link_libraries(Channel_test muduo_lib)
 
-add_executable(EchoClient_test EchoClient_test.cpp)
-target_link_libraries(EchoClient_test muduo_lib)
-
 add_executable(EchoServer_test EchoServer_test.cpp)
 target_link_libraries(EchoServer_test muduo_lib)
 

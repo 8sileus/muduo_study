@@ -43,9 +43,11 @@ void Acceptor::handleRead()
 {
     InetAddress peerAddr;
     int connfd = acceptSocket_.accept(&peerAddr);
+    InetAddress localAddr(sockets::GetLocalAddr(connfd));
+    auto socket=std::make_unique<Socket>(connfd);
     if (connfd >= 0) {
         if (newConnectionCallback_) {
-            newConnectionCallback_(connfd, peerAddr);
+            newConnectionCallback_(std::move(socket),std::move(localAddr), std::move(peerAddr));
         } else {
             sockets::Close(connfd);
         }

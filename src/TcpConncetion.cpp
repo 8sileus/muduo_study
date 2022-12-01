@@ -33,15 +33,15 @@ void defaultMessageCallback(const TcpConnection::Ptr&, Buffer* buf, Timestamp re
 TcpConnection::TcpConnection(
     EventLoop* loop,
     const std::string& name,
-    int sockfd,
+    std::unique_ptr<Socket>socket,
     const InetAddress& localAddr,
     const InetAddress& peerAddr)
     : loop_(loop)
     , name_(name)
     , state_(kConnecting)
     , reading_(true)
-    , socket_(new Socket(sockfd))
-    , channel_(new Channel(loop, sockfd))
+    , socket_(std::move(socket))
+    , channel_(new Channel(loop, socket_->fd()))
     , localAddr_(localAddr)
     , peerAddr_(peerAddr)
     , highWaterMark_(64 * 1024 * 1024)

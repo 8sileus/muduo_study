@@ -10,13 +10,16 @@
 #define __MUDUO_FILEUTIL_H__
 
 #include "Noncopyable.h"
-#include "StringPiece.h"
+
+#include<string_view>
+#include<string>
+
 
 namespace muduo {
 namespace file_util {
     class ReadSmallFile : Noncopyable {
     public:
-        ReadSmallFile(StringArg filename);
+        ReadSmallFile(std::string_view filename);
         ~ReadSmallFile();
 
         /**
@@ -46,7 +49,7 @@ namespace file_util {
 
     template <typename String>
     int readFile(
-        StringArg filename,
+        std::string_view filename,
         int maxSize,
         String* content,
         int64_t* fileSize = nullptr,
@@ -60,7 +63,7 @@ namespace file_util {
     // not thread safe
     class AppendFile : Noncopyable {
     public:
-        explicit AppendFile(StringArg filename);
+        explicit AppendFile(std::string_view filename);
         ~AppendFile();
 
         void append(const char* logline, size_t len);

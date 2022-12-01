@@ -17,9 +17,9 @@
 
 namespace muduo {
 
-file_util::AppendFile::AppendFile(StringArg filename)
+file_util::AppendFile::AppendFile(std::string_view filename)
     // a:append w:write r:read e:O_CLOEXE
-    : fp_(::fopen(filename.c_str(), "ae"))
+    : fp_(::fopen(filename.data(), "ae"))
     , writtenBytes_(0)
 {
     ::setbuffer(fp_, buffer_, sizeof(buffer_));
@@ -58,8 +58,8 @@ size_t file_util::AppendFile::write(const char* logline, size_t len)
     return ::fwrite_unlocked(logline, 1, len, fp_);
 }
 
-file_util::ReadSmallFile::ReadSmallFile(StringArg filename)
-    : fd_(::open(filename.c_str(), O_RDONLY | O_CLOEXEC))
+file_util::ReadSmallFile::ReadSmallFile(std::string_view filename)
+    : fd_(::open(filename.data(), O_RDONLY | O_CLOEXEC))
     , err_(0)
 {
     buffer_[0] = '\0';
@@ -139,7 +139,7 @@ int file_util::ReadSmallFile::readToBuffer(int* size)
     return err;
 }
 
-template int file_util::readFile(StringArg filename,
+template int file_util::readFile(std::string_view filename,
     int maxSize,
     std::string* content,
     int64_t*, int64_t*, int64_t*);

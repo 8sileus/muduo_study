@@ -22,7 +22,8 @@
 
 #include "Endian.h"
 #include "SocketAPI.h"
-#include "StringPiece.h"
+
+#include<string.h>
 
 #include <algorithm>
 #include <string>
@@ -92,9 +93,9 @@ public:
     void retrieveAll() { readerIndex_ = writerIndex_ = kCheapPrepend; }
     std::string retrieveAllAsString() { return retrieveAsString(readableBytes()); }
     std::string retrieveAsString(size_t len);
-    StringPiece toStringPiece() const { return StringPiece(peek(), static_cast<int>(readableBytes())); }
+    std::string_view toStringPiece() const { return std::string_view(peek(), static_cast<int>(readableBytes())); }
 
-    void append(const StringPiece& str) { append(str.data(), str.size()); }
+    void append(const std::string_view& str) { append(str.data(), str.size()); }
     void append(const void* data, size_t len) { append(static_cast<const char*>(data), len); }
     void append(const char* data, size_t len);
 

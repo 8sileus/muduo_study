@@ -31,7 +31,7 @@ TcpServer::TcpServer(EventLoop* loop, const InetAddress& listenAddr, const std::
 {
     LOG_TRACE << "TcpServer::constructing , name =  [" << name_ << "] constructing";
     // 当有有连接到达，acceptor将执行headRead()然后在里面TcpServer::newConnection
-    acceptor_->setNewConnectionCallback(std::bind(&TcpServer::newConnection, this, _1, _2));
+    acceptor_->setNewConnectionCallback(std::bind(&TcpServer::newConnection, this, _1, _2,_3));
 }
 
 TcpServer::~TcpServer()
@@ -55,7 +55,7 @@ void TcpServer::start()
     }
 }
 
-void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr)
+void TcpServer::newConnection(std::unique_ptr<Socket> socket,InetAddress&& localAddr, InetAddress&& peerAddr)
 {
     // 轮询算法，保证每个loop压力一样
     EventLoop* ioLoop = threadPool_->getNextLoop();
@@ -66,8 +66,7 @@ void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr)
     LOG_INFO << "TcpServer::newConnection [" << name_
              << "] - new connection [" << connName
              << "] from " << peerAddr.toIpPort();
-    InetAddress localAddr(sockets::GetLocalAddr(sockfd));
-    TcpConnection::Ptr conn(new TcpConnection(ioLoop, connName, sockfd, localAddr, peerAddr));
+    auto  conn =std::make_shared<TcpConnection>(ioLoop, connName, std::move(socket), std::move(localAddr), std::move(peerAddr));
     connections_[connName] = conn;
 
     // 回调
